@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="com.oxygenxml.pdf.review">
+  <require plugin="org.dita.pdf2"/>
+  <feature extension="package.support.name" value="Oxygen XML Editor Support"/>
+  <feature extension="package.support.email" value="support@oxygenxml.com"/>
+  <feature extension="package.version" value="18.0"/>
+  <feature extension="dita.xsl.xslfo" value="custom.xsl" type="file"/>
+  <feature extension="dita.conductor.pdf2.param" value="params.xml" type="file"/>
+  <transtype name="pdf" desc="PDF">
+    <param name="show.oxygen.changes.and.comments" desc="Show Oxygen track changes and comments" type="enum">
+      <val desc="No" default="true">no</val>
+      <val desc="Yes">yes</val>
+    </param>
+  </transtype>
+</plugin>
