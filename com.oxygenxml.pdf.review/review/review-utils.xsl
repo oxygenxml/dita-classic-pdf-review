@@ -95,6 +95,34 @@
                     </xsl:choose>
                 </oxy:oxy-current-value>
             </xsl:if>
+            
+            <!-- MID -->
+            <xsl:variable name="mid">
+                <xsl:call-template name="get-pi-part">
+                    <xsl:with-param name="part" select="'mid'"/>
+                </xsl:call-template>
+            </xsl:variable>
+            <xsl:if test="string-length($mid) > 0">
+                <oxy:oxy-mid>
+                    <xsl:value-of select="$mid"/>
+                </oxy:oxy-mid>
+            </xsl:if>
+            
+            <oxy:oxy-date>
+                <xsl:call-template name="get-date">
+                    <xsl:with-param name="ts" select="@timestamp"/>
+                </xsl:call-template>
+            </oxy:oxy-date>
+            <oxy:oxy-hour>
+                <xsl:call-template name="get-hour">
+                    <xsl:with-param name="ts" select="@timestamp"/>
+                </xsl:call-template>
+            </oxy:oxy-hour>
+            <oxy:oxy-tz>
+                <xsl:call-template name="get-tz">
+                    <xsl:with-param name="ts" select="@timestamp"/>
+                </xsl:call-template>
+            </oxy:oxy-tz>
         </oxy:oxy-attribute-change>
     </xsl:template>
     
@@ -155,5 +183,41 @@
             <!-- In order to access the current attributes values -->
             <xsl:with-param name="ctx" select="$attributesPI/following-sibling::*[1]" tunnel="yes"/>
         </xsl:apply-templates>
+    </xsl:function>
+    
+    <!-- Convert an attributes PI to a node set. -->
+    <xsl:function name="oxy:findHighlightInfoElement" as="item()*">
+        <xsl:param name="rangeEndElem" as="node()"/>
+        <!-- Find oxy:comment, oxy:insert, oxy:delete elements connected 
+            to the range end element. The hr_id is not an unique key, so 
+            we select the closest element. -->
+        
+        <xsl:choose>
+            <!-- For delete and attribute PIs usually the PI information element is right after the range end element. -->
+            <xsl:when test="$rangeEndElem/following-sibling::node()[1][local-name() = 'oxy-delete' or local-name() = 'oxy-attributes']
+                [@hr_id=$rangeEndElem/@hr_id]">
+                <xsl:copy-of select="$rangeEndElem/following-sibling::node()[1]"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:variable name="prevMatch" select="($rangeEndElem/preceding::oxy:*[
+                    not(local-name() = 'oxy-range-start') and 
+                    not(local-name() = 'oxy-range-end')]
+                    [@hr_id=$rangeEndElem/@hr_id])
+                    [position() = last()]"/>
+                <xsl:choose>
+                    <xsl:when test="$prevMatch">
+                        <xsl:copy-of select="$prevMatch"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <!-- For deletions and attribute changes the information PI element might be after the range end.-->
+                        <xsl:copy-of select="($rangeEndElem/following::oxy:*[
+                            not(local-name() = 'oxy-range-start') and 
+                            not(local-name() = 'oxy-range-end')]
+                            [@hr_id=$rangeEndElem/@hr_id])
+                            [position() = 1]"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:function>
 </xsl:stylesheet>

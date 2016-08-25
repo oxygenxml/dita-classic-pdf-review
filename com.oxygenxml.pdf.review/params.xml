@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension>
-    <param name="show.oxygen.changes.and.comments" expression="${show.oxygen.changes.and.comments}" if="show.oxygen.changes.and.comments"/>  
+    <param name="use.alpha.for.highlights" expression="'no'"/>
+    <param name="show.changes.and.comments" expression="${show.changes.and.comments}" if="show.changes.and.comments"/>  
 </extension>
 
