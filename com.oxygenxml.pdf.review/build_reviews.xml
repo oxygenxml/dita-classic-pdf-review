@@ -32,6 +32,6 @@
         
         <!--Let the pipeline continue...-->
         <copy file="${pdf2.temp.dir}/${tmpProcess3}" tofile="${pdf2.temp.dir}/topicReview.fo" failonerror="yes"/>
-    	<rename src="${pdf2.temp.dir}/topicReview.fo" dest="${pdf2.temp.dir}/topic.fo"/>
+    	<move file="${pdf2.temp.dir}/topicReview.fo" tofile="${pdf2.temp.dir}/topic.fo"/>
     </target>
 </project>

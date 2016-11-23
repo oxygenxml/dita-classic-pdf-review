@@ -13,7 +13,7 @@
         <!-- Usually ignore contents -->
     </xsl:template>
     
-    <xsl:template match="oxy:oxy-range-end">
+    <xsl:template match="oxy:oxy-range-end[not(ancestor::*[local-name() = 'marker'])]">
         <xsl:call-template name="generateFootnote">
             <xsl:with-param name="elem" select="oxy:findHighlightInfoElement(.)"/>
             <xsl:with-param name="color" select="'black'"/>
@@ -21,7 +21,8 @@
     </xsl:template>
     
     <!-- INSERT CHANGE, USE UNDERLINE -->
-    <xsl:template match="oxy:oxy-insert-hl">
+    <xsl:template match="oxy:oxy-insert-hl[
+        not(parent::*[local-name() = 'table' or local-name() = 'table-body' or local-name() = 'table-row' or local-name() = 'list-block'])]">
         <fo:inline color="blue">
             <xsl:apply-templates/>
         </fo:inline>
@@ -32,6 +33,44 @@
         <fo:inline color="red" text-decoration="line-through">
             <xsl:apply-templates/>
         </fo:inline>    
+    </xsl:template>
+    
+    <!-- EXM-38048 Somehow wrap in list items oxy elements which are directly in it. -->
+    <xsl:template match="fo:list-block">
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:choose>
+                <xsl:when test="oxy:*">
+                    <xsl:for-each-group select="*" group-adjacent="namespace-uri() = 'http://www.oxygenxml.com/extensions/author'">
+                        <xsl:choose>
+                            <xsl:when test="namespace-uri(current-group()[1]) = 'http://www.oxygenxml.com/extensions/author'">
+                                <xsl:variable name="content">
+                                    <xsl:apply-templates select="current-group()"/>
+                                </xsl:variable>
+                                <xsl:if test="normalize-space($content)">
+                                    <fo:list-item>
+                                        <fo:list-item-label><fo:block><fo:inline/></fo:block></fo:list-item-label>
+                                        <fo:list-item-body>
+                                            <fo:block>
+                                                <fo:inline>
+                                                    <xsl:copy-of select="$content"/>
+                                                </fo:inline>    
+                                            </fo:block>
+                                        </fo:list-item-body>
+                                    </fo:list-item>
+                                </xsl:if>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:apply-templates select="current-group()"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:for-each-group>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:copy>
     </xsl:template>
     
     <!-- COLOR HIGHLIGHT, USE PROPER BG COLOR -->
@@ -63,8 +102,7 @@
             <xsl:variable name="fnid" select="generate-id($elem)"/>
             <fo:basic-link internal-destination="{$fnid}">
                 <fo:footnote start-indent="0" font-style="normal"
-                    font-size="14" font-weight="100"
-                    text-decoration="none">
+                    font-size="14px" font-weight="100" text-align="left" text-align-last="left">
                     <fo:inline baseline-shift="super" font-size="75%" color="{$color}">[<xsl:value-of select="$number"/>]</fo:inline>
                     <fo:footnote-body>   
                         <fo:block color="{$color}" id="{$fnid}">     
@@ -162,4 +200,38 @@
             <xsl:apply-templates select="node() | @*"/>
         </xsl:copy>
     </xsl:template>
+    
+    <xsl:template match="*:table">
+        <!-- Push up all track changes information placed directly in table or table body in order not to break the XSL-FO -->
+        <xsl:apply-templates select="node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author'] | *:table-body/node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']"/>
+        <xsl:copy>
+            <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
+        </xsl:copy>        
+    </xsl:template>
+    
+    <xsl:template match="*:table-row">
+        <xsl:copy>
+            <!-- Avoid all track changes information placed directly in row -->
+            <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
+        </xsl:copy>        
+    </xsl:template>
+    
+    <xsl:template match="*:table-body">
+        <xsl:copy>
+            <!-- Avoid all track changes information placed directly in table-body -->
+            <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
+        </xsl:copy>        
+    </xsl:template>
+
+    <xsl:template match="*:cell">
+        <xsl:copy>
+            <xsl:apply-templates select="@*"/>
+            <!-- Copy also change tracking information located before the cell. -->
+            <xsl:apply-templates select="preceding-sibling::node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']"/>    
+            <xsl:apply-templates select="node()"/>
+            <!-- Copy also change tracking information located after the cell. -->
+            <xsl:apply-templates select="following-sibling::node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']"/>
+        </xsl:copy>        
+    </xsl:template>
+    
 </xsl:stylesheet>
