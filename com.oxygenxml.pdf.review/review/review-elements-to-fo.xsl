@@ -9,11 +9,25 @@
     <xsl:include href="review-utils.xsl"/>
     <xsl:param name="show.changes.and.comments" select="'no'"/>
     
+<!-- defining the formatting of modifications  -->
+    <xsl:attribute-set name="insert">
+        <xsl:attribute name="color">blue</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="change">
+        <xsl:attribute name="color">yellow</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="delete">
+        <xsl:attribute name="color">red</xsl:attribute>
+        <xsl:attribute name="text-decoration">line-through</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="comment">
+    </xsl:attribute-set>
+
     <xsl:template match="oxy:*">
         <!-- Usually ignore contents -->
     </xsl:template>
     
-    <xsl:template match="oxy:oxy-range-end[not(ancestor::*[local-name() = 'marker'])]">
+    <xsl:template match="oxy:oxy-range-end[not(ancestor::*[local-name() = 'marker' or local-name() = 'footnote'])]">
         <xsl:call-template name="generateFootnote">
             <xsl:with-param name="elem" select="oxy:findHighlightInfoElement(.)"/>
             <xsl:with-param name="color" select="'black'"/>
@@ -23,14 +37,14 @@
     <!-- INSERT CHANGE, USE UNDERLINE -->
     <xsl:template match="oxy:oxy-insert-hl[
         not(parent::*[local-name() = 'table' or local-name() = 'table-body' or local-name() = 'table-row' or local-name() = 'list-block'])]">
-        <fo:inline color="blue">
+        <fo:inline xsl:use-attribute-sets="insert">
             <xsl:apply-templates/>
         </fo:inline>
     </xsl:template>
     
     <!-- DELETE CHANGE, USE STRIKEOUT -->
     <xsl:template match="oxy:oxy-delete-hl">
-        <fo:inline color="red" text-decoration="line-through">
+        <fo:inline xsl:use-attribute-sets="delete">
             <xsl:apply-templates/>
         </fo:inline>    
     </xsl:template>
@@ -83,7 +97,7 @@
     
     <!-- COMMENT CHANGE -->
     <xsl:template match="oxy:oxy-comment-hl">
-        <fo:inline background-color="yellow">
+        <fo:inline xsl:use-attribute-sets="change">
             <xsl:apply-templates/>
         </fo:inline>
     </xsl:template>
@@ -118,7 +132,7 @@
     <xsl:template mode="getCommentContent" match="*">
         <xsl:param name="number"/>
         <xsl:param name="indent" select="0"/>
-        <fo:block>
+        <fo:block xsl:use-attribute-sets="comment">
             <xsl:choose>
                 <!-- Nested replies, indent to the left so that they appear like a conversation..-->
                 <xsl:when test="$indent = 1">

@@ -86,7 +86,7 @@
                 <oxy:oxy-current-value>
                     <xsl:choose>
                         <xsl:when test="$aName = 'id'">
-                            <!-- DITA OT is rewriting the values from the @id attribute, so there is no point in showing them.-->
+                            <!-- DITA-OT is rewriting the values from the @id attribute, so there is no point in showing them.-->
                             <xsl:attribute name="unknown" select="'true'"/>
                         </xsl:when>
                         <xsl:otherwise>
