@@ -14,7 +14,7 @@
         <xsl:attribute name="color">blue</xsl:attribute>
     </xsl:attribute-set>
     <xsl:attribute-set name="change">
-        <xsl:attribute name="color">yellow</xsl:attribute>
+        <xsl:attribute name="background-color">yellow</xsl:attribute>
     </xsl:attribute-set>
     <xsl:attribute-set name="delete">
         <xsl:attribute name="color">red</xsl:attribute>
