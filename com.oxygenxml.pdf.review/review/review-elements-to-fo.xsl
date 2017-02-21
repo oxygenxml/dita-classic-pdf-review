@@ -36,7 +36,7 @@
     
     <!-- INSERT CHANGE, USE UNDERLINE -->
     <xsl:template match="oxy:oxy-insert-hl[
-        not(parent::*[local-name() = 'table' or local-name() = 'table-body' or local-name() = 'table-row' or local-name() = 'list-block'])]">
+        not(parent::*[local-name() = 'table' or local-name() = 'table-body' or local-name() = 'table-row' or local-name() = 'list-block' or local-name() = 'flow'])]">
         <fo:inline xsl:use-attribute-sets="insert">
             <xsl:apply-templates/>
         </fo:inline>
@@ -50,40 +50,34 @@
     </xsl:template>
     
     <!-- EXM-38048 Somehow wrap in list items oxy elements which are directly in it. -->
-    <xsl:template match="fo:list-block">
+    <xsl:template match="fo:list-block[oxy:*]">
         <xsl:copy>
             <xsl:copy-of select="@*"/>
-            <xsl:choose>
-                <xsl:when test="oxy:*">
-                    <xsl:for-each-group select="*" group-adjacent="namespace-uri() = 'http://www.oxygenxml.com/extensions/author'">
-                        <xsl:choose>
-                            <xsl:when test="namespace-uri(current-group()[1]) = 'http://www.oxygenxml.com/extensions/author'">
-                                <xsl:variable name="content">
-                                    <xsl:apply-templates select="current-group()"/>
-                                </xsl:variable>
-                                <xsl:if test="normalize-space($content)">
-                                    <fo:list-item>
-                                        <fo:list-item-label><fo:block><fo:inline/></fo:block></fo:list-item-label>
-                                        <fo:list-item-body>
-                                            <fo:block>
-                                                <fo:inline>
-                                                    <xsl:copy-of select="$content"/>
-                                                </fo:inline>    
-                                            </fo:block>
-                                        </fo:list-item-body>
-                                    </fo:list-item>
-                                </xsl:if>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:apply-templates select="current-group()"/>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:for-each-group>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:apply-templates/>
-                </xsl:otherwise>
-            </xsl:choose>
+            
+            <xsl:for-each-group select="*" group-adjacent="namespace-uri() = 'http://www.oxygenxml.com/extensions/author'">
+                <xsl:choose>
+                    <xsl:when test="namespace-uri(current-group()[1]) = 'http://www.oxygenxml.com/extensions/author'">
+                        <xsl:variable name="content">
+                            <xsl:apply-templates select="current-group()"/>
+                        </xsl:variable>
+                        <xsl:if test="normalize-space($content)">
+                            <fo:list-item>
+                                <fo:list-item-label><fo:block><fo:inline/></fo:block></fo:list-item-label>
+                                <fo:list-item-body>
+                                    <fo:block>
+                                        <fo:inline>
+                                            <xsl:copy-of select="$content"/>
+                                        </fo:inline>    
+                                    </fo:block>
+                                </fo:list-item-body>
+                            </fo:list-item>
+                        </xsl:if>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:apply-templates select="current-group()"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:for-each-group>
         </xsl:copy>
     </xsl:template>
     
@@ -116,8 +110,8 @@
             <xsl:variable name="fnid" select="generate-id($elem)"/>
             <fo:basic-link internal-destination="{$fnid}">
                 <fo:footnote start-indent="0" font-style="normal"
-                    font-size="14px" font-weight="100" text-align="left" text-align-last="left">
-                    <fo:inline baseline-shift="super" font-size="75%" color="{$color}">[<xsl:value-of select="$number"/>]</fo:inline>
+                    font-size="75%" font-weight="100" text-align="left" text-align-last="left">
+                    <fo:inline baseline-shift="super" color="{$color}">[<xsl:value-of select="$number"/>]</fo:inline>
                     <fo:footnote-body>   
                         <fo:block color="{$color}" id="{$fnid}">     
                             <xsl:copy-of select="$commentContent"/>                                          
@@ -248,4 +242,29 @@
         </xsl:copy>        
     </xsl:template>
     
+    <!--Avoid directly outputting oxy elements inside it-->
+    <xsl:template match="fo:flow[oxy:*]">
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:for-each-group select="*" group-adjacent="namespace-uri() = 'http://www.oxygenxml.com/extensions/author'">
+                <xsl:choose>
+                    <xsl:when test="namespace-uri(current-group()[1]) = 'http://www.oxygenxml.com/extensions/author'">
+                        <xsl:variable name="content">
+                            <xsl:apply-templates select="current-group()"/>
+                        </xsl:variable>
+                        <xsl:if test="normalize-space($content)">
+                            <fo:block>
+                                <fo:inline>
+                                    <xsl:copy-of select="$content"/>
+                                </fo:inline>    
+                            </fo:block>
+                        </xsl:if>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:apply-templates select="current-group()"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:for-each-group>
+        </xsl:copy>
+    </xsl:template>
 </xsl:stylesheet>
