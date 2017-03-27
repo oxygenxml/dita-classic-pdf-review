@@ -22,6 +22,21 @@
     </xsl:attribute-set>
     <xsl:attribute-set name="comment">
     </xsl:attribute-set>
+    <xsl:attribute-set name="footnote_style">
+        <xsl:attribute name="start-indent">0</xsl:attribute>
+        <xsl:attribute name="font-style">normal</xsl:attribute>
+        <xsl:attribute name="font-size">75%</xsl:attribute>
+        <xsl:attribute name="font-weight">100</xsl:attribute>
+        <xsl:attribute name="text-align">left</xsl:attribute>
+        <xsl:attribute name="text-align-last">left</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="footnote_char_style">
+        <xsl:attribute name="baseline-shift">super</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="footnote_body_style">
+    </xsl:attribute-set>
+    <xsl:attribute-set name="footnote_body_content_style">
+    </xsl:attribute-set>
 
     <xsl:template match="oxy:*">
         <!-- Usually ignore contents -->
@@ -109,11 +124,10 @@
         <xsl:if test="$commentContent != ''">
             <xsl:variable name="fnid" select="generate-id($elem)"/>
             <fo:basic-link internal-destination="{$fnid}">
-                <fo:footnote start-indent="0" font-style="normal"
-                    font-size="75%" font-weight="100" text-align="left" text-align-last="left">
-                    <fo:inline baseline-shift="super" color="{$color}">[<xsl:value-of select="$number"/>]</fo:inline>
-                    <fo:footnote-body>   
-                        <fo:block color="{$color}" id="{$fnid}">     
+                <fo:footnote xsl:use-attribute-sets="footnote_style">
+                    <fo:inline color="{$color}" xsl:use-attribute-sets="footnote_char_style">[<xsl:value-of select="$number"/>]</fo:inline>
+                    <fo:footnote-body xsl:use-attribute-sets="footnote_body_style">   
+                        <fo:block color="{$color}" id="{$fnid}" xsl:use-attribute-sets="footnote_body_content_style">     
                             <xsl:copy-of select="$commentContent"/>                                          
                         </fo:block>
                     </fo:footnote-body>
