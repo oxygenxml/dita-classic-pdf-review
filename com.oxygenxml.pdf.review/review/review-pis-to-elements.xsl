@@ -18,7 +18,12 @@ Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
     -->
     <xsl:template match="node() | @*">
         <xsl:copy>
-            <xsl:apply-templates select="node() | @*"/>
+            <xsl:apply-templates select="@*"/>
+            <xsl:if test="parent::node() = /">
+                <!-- This is the root element, maybe it has Oxygen processing instructions before it -->
+                <xsl:apply-templates select="preceding-sibling::processing-instruction('oxy_attributes')" mode="processOxygenPIs"/>                
+            </xsl:if>
+            <xsl:apply-templates select="node()"/>
         </xsl:copy>
     </xsl:template>
     

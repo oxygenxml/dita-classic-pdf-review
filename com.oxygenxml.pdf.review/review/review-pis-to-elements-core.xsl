@@ -44,6 +44,19 @@ Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
         processing-instruction('oxy_comment_start') |
         processing-instruction('oxy_delete') |
         processing-instruction('oxy_insert_start')">
+        <!-- We cannot generate Oxygen elements outside of the root element -->
+        <xsl:if test="not(parent::node() = /)">
+            <xsl:apply-templates select="." mode="processOxygenPIs"/>
+        </xsl:if>
+    </xsl:template>
+    
+    <!-- Transform all the oxygen PI with a comment into comment elements -->
+    <xsl:template
+        match="
+        processing-instruction('oxy_attributes') |
+        processing-instruction('oxy_comment_start') |
+        processing-instruction('oxy_delete') |
+        processing-instruction('oxy_insert_start')" mode="processOxygenPIs">
         
         
         <xsl:if test="$show.changes.and.comments = 'yes'">
