@@ -22,10 +22,12 @@
     </xsl:attribute-set>
     <xsl:attribute-set name="comment">
     </xsl:attribute-set>
-    <xsl:attribute-set name="footnote_style">
+    <xsl:attribute-set name="footnote_font_size">
+        <xsl:attribute name="font-size">75%</xsl:attribute>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="footnote_style" use-attribute-sets="footnote_font_size">
         <xsl:attribute name="start-indent">0</xsl:attribute>
         <xsl:attribute name="font-style">normal</xsl:attribute>
-        <xsl:attribute name="font-size">75%</xsl:attribute>
         <xsl:attribute name="font-weight">100</xsl:attribute>
         <xsl:attribute name="text-align">left</xsl:attribute>
         <xsl:attribute name="text-align-last">left</xsl:attribute>
@@ -33,7 +35,8 @@
     <xsl:attribute-set name="footnote_char_style">
         <xsl:attribute name="baseline-shift">super</xsl:attribute>
     </xsl:attribute-set>
-    <xsl:attribute-set name="footnote_body_style">
+    <xsl:attribute-set name="footnote_body_style" use-attribute-sets="footnote_style">
+        <xsl:attribute name="font-size">12pt</xsl:attribute>
     </xsl:attribute-set>
     <xsl:attribute-set name="footnote_body_content_style">
     </xsl:attribute-set>
@@ -151,7 +154,7 @@
                 </xsl:when>
             </xsl:choose>
             <xsl:if test="$number">
-                <fo:inline baseline-shift="super" font-size="75%">
+                <fo:inline baseline-shift="super" xsl:use-attribute-sets="footnote_font_size">
                     <xsl:value-of select="$number"/>
                 </fo:inline>
             </xsl:if>
@@ -225,7 +228,8 @@
     
     <xsl:template match="*:table">
         <!-- Push up all track changes information placed directly in table or table body in order not to break the XSL-FO -->
-        <xsl:apply-templates select="node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author'] | *:table-body/node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']"/>
+        <xsl:apply-templates select="node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author'] | *:table-body/node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']
+            | *:table-header/node()[namespace-uri() = 'http://www.oxygenxml.com/extensions/author']"/>
         <xsl:copy>
             <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
         </xsl:copy>        
@@ -239,6 +243,13 @@
     </xsl:template>
     
     <xsl:template match="*:table-body">
+        <xsl:copy>
+            <!-- Avoid all track changes information placed directly in table-body -->
+            <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
+        </xsl:copy>        
+    </xsl:template>
+
+    <xsl:template match="*:table-header">
         <xsl:copy>
             <!-- Avoid all track changes information placed directly in table-body -->
             <xsl:apply-templates select="node()[not(namespace-uri() = 'http://www.oxygenxml.com/extensions/author')] | @*"/>
