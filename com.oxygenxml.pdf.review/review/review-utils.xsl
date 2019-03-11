@@ -1,10 +1,172 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    exclude-result-prefixes="xs saxon oxy"
+    exclude-result-prefixes="xs saxon oxy Setter Getter"
     version="2.0"
     xmlns:oxy="http://www.oxygenxml.com/extensions/author"
-    xmlns:saxon="http://saxon.sf.net/">
+    xmlns:saxon="http://saxon.sf.net/"
+    xmlns:ditaarch="http://dita.oasis-open.org/architecture/2005/"
+    xmlns:Setter="java:com.oxygenxml.dita.xsltextensions.Setter"
+    xmlns:Getter="java:com.oxygenxml.dita.xsltextensions.Getter"
+    extension-element-prefixes="saxon">
+
+    <xsl:import href="review-dita-id-filter.xsl"/>
+        
+    <xsl:variable name="pi-stack" saxon:assignable="yes" />
+    
+    <xsl:variable name="is-dita" select="if (/*/@ditaarch:DITAArchVersion) then true() else false()"/>
+    <!-- 
+        This variable holds the mapping between the text nodes ids 
+        and their highlight state and covering review processing 
+        instruction. 
+    -->
+    <xsl:variable name="review-coverage">
+
+		<xsl:if test="$show.changes.and.comments = 'yes'">
+		    
+		    <!-- 
+		      Create a border for the highlights, make sure the unclosed highlights are:
+		      1. reported to the user
+		      2. do not bleed outside their topic, in case of DITA.
+		    -->
+
+		    <xsl:variable name="ranges" select="if (/*[contains(@class, ' map/map ')]) then //*[contains(@class, ' topic/topic ')] else /*"/>
+
+		    <xsl:for-each select="$ranges">		        
+    		    <xsl:variable name="range" select="."/>
+
+                <xsl:value-of select="Setter:set('pi-stack', ())"/>
+		        <xsl:variable name="generated">
+		          <xsl:for-each select="
+		            $range//processing-instruction('oxy_insert_start')| 
+		            $range//processing-instruction('oxy_insert_end')|
+		            $range//text()">
+		            <xsl:call-template name="generate-review-text-coverage-ids"/>
+		          </xsl:for-each>		          
+		        </xsl:variable>
+		        <xsl:if test="$generated">
+			        <xsl:choose>
+			          <xsl:when test="Getter:get('pi-stack')[1]">
+			            <xsl:call-template name="report-review-text-coverage-bleeding">
+			              <xsl:with-param name="range" select="$range"/>
+			            </xsl:call-template>
+			          </xsl:when>
+			          <xsl:otherwise>
+			            <inserted>
+			                <xsl:copy-of select="$generated"/>
+			            </inserted>
+			          </xsl:otherwise>
+			        </xsl:choose>
+				</xsl:if>
+				
+				
+
+		        <xsl:value-of select="Setter:set('pi-stack', ())"/>
+		        <xsl:variable name="generated">
+    		        <xsl:for-each select="
+    		            $range//processing-instruction('oxy_comment_start')| 
+    		            $range//processing-instruction('oxy_comment_end')|
+    		            $range//text()">
+    		        	<xsl:call-template name="generate-review-text-coverage-ids"/>		            
+    		        </xsl:for-each>
+		      </xsl:variable>
+		      <xsl:if test="$generated">
+			      <xsl:choose>
+			        <xsl:when test="Getter:get('pi-stack')[1]">
+			          <xsl:call-template name="report-review-text-coverage-bleeding">
+			            <xsl:with-param name="range" select="$range"/>
+			          </xsl:call-template>
+			        </xsl:when>
+			        <xsl:otherwise>
+			          <commented>
+			            <xsl:copy-of select="$generated"/>
+			          </commented>
+			        </xsl:otherwise>
+			      </xsl:choose>
+			  </xsl:if>
+			  
+		      <xsl:value-of select="Setter:set('pi-stack', ())"/>
+		      <xsl:variable name="generated">
+    		        <xsl:for-each select="
+    		            $range//processing-instruction('oxy_custom_start')[contains(., 'type=&quot;oxy_content_highlight&quot;')]|
+    		            $range//processing-instruction('oxy_custom_end')|
+    		            $range//text()">
+    		        	<xsl:call-template name="generate-review-text-coverage-ids"/>
+    		        </xsl:for-each>	    
+		      </xsl:variable>
+		      <xsl:if test="$generated">
+			      <xsl:choose>
+			        <xsl:when test="Getter:get('pi-stack')[1]">
+			          <xsl:call-template name="report-review-text-coverage-bleeding">
+			            <xsl:with-param name="range" select="$range"/>
+			          </xsl:call-template>
+			        </xsl:when>
+			        <xsl:otherwise>
+			          <highlighted>
+			            <xsl:copy-of select="$generated"/>
+			          </highlighted>
+			        </xsl:otherwise>
+			      </xsl:choose>
+		      </xsl:if>
+		      <!-- Cleanup for the next range. -->
+              <xsl:value-of select="Setter:set('pi-stack', ())"/>
+		    </xsl:for-each>
+		  </xsl:if>
+      
+     </xsl:variable>
+
+    <xsl:template name="report-review-text-coverage-bleeding">
+        <xsl:param name="range" as="node()"/>
+        <xsl:variable name="title-path">
+          <xsl:for-each select="Getter:get('pi-stack')[1]/ancestor::*[title]/title">
+            <xsl:value-of select="."/>
+            <xsl:if test="position() != last()">
+              <xsl:text> / </xsl:text>
+            </xsl:if>
+          </xsl:for-each>
+        </xsl:variable>
+        <xsl:message terminate="no">[OXYRV01W][WARNING] Cannot process <xsl:value-of select="Getter:get('pi-stack')[1]/name()"/> highlights. Highlights without an end: <xsl:copy-of select="Getter:get('pi-stack')"/>. Section in which they appear: "<xsl:value-of select="$title-path"/>" </xsl:message>       
+    </xsl:template>
+    
+    <!--
+        Generates a series of markers for text nodes, like the entries in a map.
+        Uses a stack to determine which PI is covering the text node.
+        
+        Context: A text node.
+    -->    
+    <xsl:template name="generate-review-text-coverage-ids">
+        
+        <xsl:choose>
+            
+            <xsl:when test="self::text()">
+                <xsl:choose>
+                    <xsl:when test="Getter:get('pi-stack')[1]">
+                        <text text-id="{generate-id(.)}">
+                            <xsl:copy-of select="Getter:get('pi-stack')[1]"/>
+                        </text>
+                    </xsl:when>
+                </xsl:choose>
+            </xsl:when>
+
+            <xsl:otherwise>
+                <xsl:choose>
+                    <xsl:when test="ends-with(./name(), '_start')">
+                        <xsl:value-of select="Setter:set('pi-stack', insert-before(Getter:get('pi-stack'), 1, .))"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="Setter:set('pi-stack', remove(Getter:get('pi-stack'), 1))"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:otherwise>            
+            
+        </xsl:choose>
+               
+    </xsl:template>
+    
+    <xsl:key name="key-inserted" match="inserted/text" use="@text-id"/>
+    <xsl:key name="key-commented" match="commented/text" use="@text-id"/>
+    <xsl:key name="key-highlighted" match="highlighted/text" use="@text-id"/>
+    
     <!-- Converts a timestamp to a date using the YYYY/MM/DD format -->
     <xsl:template name="get-date">
         <xsl:param name="ts"/>
@@ -84,15 +246,7 @@
             <xsl:variable name="currentValue" select="$ctx/@*[local-name() = $aName]"/>
             <xsl:if test="$currentValue">
                 <oxy:oxy-current-value>
-                    <xsl:choose>
-                        <xsl:when test="$aName = 'id'">
-                            <!-- DITA-OT is rewriting the values from the @id attribute, so there is no point in showing them.-->
-                            <xsl:attribute name="unknown" select="'true'"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="$currentValue"/>                        
-                        </xsl:otherwise>
-                    </xsl:choose>
+                    <xsl:value-of select="oxy:filterCurrentValue($currentValue, $aName, $is-dita)"/>
                 </oxy:oxy-current-value>
             </xsl:if>
             
@@ -128,45 +282,32 @@
     
     <xsl:function name="oxy:getHighlightState" as="item()*">
         <xsl:param name="context" as="node()"/>
+
+        <xsl:variable name="cid" select="generate-id($context)"/>
         
-        <!--  There is at least a comment/change tracking PI -->
-        <!-- Highlight the inserts -->
-        <xsl:variable name="preceding-insert"
-            select="$context/preceding::processing-instruction()
-            [name() = 'oxy_insert_start' or name() = 'oxy_insert_end']"/>
-        <xsl:variable name="is-in-insert"
-            select="$preceding-insert[last()]/name() = 'oxy_insert_start'"/>
-        
-        <!--  The highlight is not perfect, it fails on nested comments. -->
-        <xsl:variable name="preceding-comment"
-            select="$context/preceding::processing-instruction()
-            [name() = 'oxy_comment_start' or name() = 'oxy_comment_end']"/>
-        
-        <xsl:variable name="is-in-comment"
-            select="$preceding-comment[last()]/name() = 'oxy_comment_start'"/>
-        
-        
-        <!-- The highlight is not perfect, it fails on nested highlights. -->
-        <xsl:variable name="preceding-highlight"
-            select="$context/preceding::processing-instruction()
-            [(name() = 'oxy_custom_start' and contains(., 'type=&quot;oxy_content_highlight&quot;')) 
-            or name() = 'oxy_custom_end']"/>
-        
-        <xsl:variable name="is-in-highlight"
-            select="$context/$preceding-highlight[last()]/name() = 'oxy_custom_start'"/>
-        
+        <xsl:variable name="n" select="$review-coverage/key('key-inserted', $cid)"/>
         <xsl:choose>
-            <xsl:when test="$is-in-insert">
-                <xsl:sequence select="'insert', $preceding-insert[last()]"/>
-            </xsl:when>
-            <xsl:when test="$is-in-comment">
-                <xsl:sequence select="'comment', $preceding-comment[last()]"/>
-            </xsl:when>
-            <xsl:when test="$is-in-highlight">
-                <xsl:sequence select="'highlight', $preceding-highlight[last()]"/>
+            <xsl:when test="$n">
+                <xsl:sequence select="'insert', $n/processing-instruction()"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:sequence select="'other'"/>
+                <xsl:variable name="n" select="$review-coverage/key('key-commented', $cid)"/>
+                <xsl:choose>
+                    <xsl:when test="$n">
+                        <xsl:sequence select="'comment', $n/processing-instruction()"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:variable name="n" select="$review-coverage/key('key-highlighted', $cid)"/>
+                        <xsl:choose>
+                            <xsl:when test="$n">
+                                <xsl:sequence select="'highlight', $n/processing-instruction()"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:sequence select="'other'"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:function>
@@ -177,8 +318,13 @@
         <!-- Take each of the attribute changes (are separated with spaces.) -->
         <xsl:variable name="s1"
             select="replace($attributesPI, '\s*(.*?)=&quot;(.*?)&quot;', '&amp;lt;attribute name=&quot;$1&quot;&amp;gt;$2&amp;lt;/attribute&amp;gt;')"/>
+        <xsl:variable name="toParse" select="concat('&lt;root>', oxy:unescape($s1), '&lt;/root>')"/>
+        <xsl:variable name="parsed">
+            <xsl:copy-of select="saxon:parse($toParse)" use-when="function-available('saxon:parse')"/>
+            <xsl:copy-of select="parse-xml($toParse)" use-when="not(function-available('saxon:parse'))"/>
+        </xsl:variable>
         <xsl:apply-templates
-            select="saxon:parse(concat('&lt;root>', oxy:unescape($s1), '&lt;/root>'))"
+            select="$parsed"
             mode="attributes-changes">
             <!-- In order to access the current attributes values -->
             <xsl:with-param name="ctx" select="$attributesPI/following-sibling::*[1]" tunnel="yes"/>
@@ -220,4 +366,23 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:function>
+    
+    <xsl:function name="oxy:filterCurrentValue" as="item()*">
+      <xsl:param name="currentValue"/>
+      <xsl:param name="localName"/>
+      <xsl:param name="isDita"/>
+      
+      <xsl:choose>
+        <xsl:when test="$isDita and $localName = 'id'">
+            <xsl:value-of select="oxy:getOriginalDITAIDValue($currentValue)"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$currentValue"/>
+        </xsl:otherwise>
+      </xsl:choose>
+      
+    </xsl:function>
+        
+    
+    
 </xsl:stylesheet>
