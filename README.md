@@ -1,4 +1,4 @@
-# classic-pdf-review
+# Plugin Showing Oxygen Change Tracking information in the PDF output
 Plugin which allows showing Oxygen track changes and comments in the classic PDF output obtained using the DITA OT.
 The plugin is compatible with both DITA OT 1.8 and 2.x. 
 
