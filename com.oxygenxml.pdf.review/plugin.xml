@@ -10,6 +10,8 @@
   <feature extension="depend.org.dita.pdf2.format.pre" value="process-reviews"/>
   <feature extension="dita.conductor.target.relative" value="integrator.xml" type="file"/>  
   
+  <feature extension="dita.conductor.lib.import" file="lib/oxygen-dita-publishing-xslt-extensions.jar"  xml:base="."/>
+  
   <transtype name="pdf" desc="PDF">
     <param name="show.changes.and.comments" desc="Show Oxygen track changes and comments" type="enum">
       <val desc="No" default="true">no</val>
