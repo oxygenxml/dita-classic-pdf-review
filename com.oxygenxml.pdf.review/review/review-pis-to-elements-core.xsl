@@ -2,7 +2,7 @@
 <!--
     
 Oxygen WebHelp Plugin
-Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
+Copyright (c) 1998-2018 Syncro Soft SRL, Romania.  All rights reserved.
 
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
@@ -106,12 +106,12 @@ Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
                 <xsl:attribute name="hr_id" select="$comment-nr"/>      
                 
                 <xsl:variable name="comment-flag">
-                   <xsl:call-template name="get-pi-part">
-                       <xsl:with-param name="part" select="'flag'"/>
-                   </xsl:call-template>
+                    <xsl:call-template name="get-pi-part">
+                        <xsl:with-param name="part" select="'flag'"/>
+                    </xsl:call-template>
                 </xsl:variable>
                 <xsl:if test="string-length($comment-flag) > 0">                         
-	               	<xsl:attribute name="flag" select="$comment-flag"/>
+                    <xsl:attribute name="flag" select="$comment-flag"/>
                 </xsl:if>
                 
                 
@@ -194,8 +194,13 @@ Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
                                             <xsl:with-param name="part" select="'content'"/>
                                         </xsl:call-template>
                                     </xsl:variable>
+                                    <xsl:variable name="toParse" select="concat('&lt;r>', $deleted, '&lt;/r>')"/>
+                                    <xsl:variable name="parsed">
+                                        <xsl:copy-of select="saxon:parse($toParse)" use-when="function-available('saxon:parse')"/>
+                                        <xsl:copy-of select="parse-xml($toParse)" use-when="not(function-available('saxon:parse'))"/>
+                                    </xsl:variable>
                                     <xsl:variable name="deleted-content" 
-                                        select="string(saxon:parse(concat('&lt;r>', $deleted, '&lt;/r>'))//text())"
+                                        select="string($parsed//text())"
                                     />
                                     <!-- Limit to 50 chars.. -->
                                     <xsl:choose>
@@ -262,6 +267,7 @@ Copyright (c) 1998-2017 Syncro Soft SRL, Romania.  All rights reserved.
             </xsl:element>
         </xsl:if>
     </xsl:template>
+    
     
     <!-- Mark the range end -->
     <xsl:template
