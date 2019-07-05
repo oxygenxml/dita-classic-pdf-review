@@ -274,30 +274,37 @@ Copyright (c) 1998-2019 Syncro Soft SRL, Romania.  All rights reserved.
         match="
         processing-instruction('oxy_comment_end') |
         processing-instruction('oxy_insert_end')">
+        <xsl:variable name="isComment" select="name() = 'oxy_comment_end'"/>
         <xsl:if test="$show.changes.and.comments = 'yes'">
             <xsl:variable name="start-name"
                 select="concat(substring-before(name(), '_end'), '_start')"/>
-            
+
             <!-- In case of nested comments links the end PI to the start PI -->
             <xsl:variable name="start-mid">
                 <xsl:call-template name="get-pi-part">
                     <xsl:with-param name="part" select="'mid'"/>
                 </xsl:call-template>
             </xsl:variable>
-            
+
             <xsl:variable name="preceding"
                 select="
-                if (string-length($start-mid) > 0)
-                then
-                preceding::processing-instruction()
-                [name() = $start-name]
-                [contains(., concat(' mid=&quot;', $start-mid, '&quot;'))]
-                else
-                preceding::processing-instruction()
-                [name() = $start-name]
-                [not(contains(., ' mid=&quot;'))]
-                "/>
-            
+                    (:Simple, we have @mid's:)
+                    if (string-length($start-mid) > 0) then
+                        (preceding::processing-instruction()
+                        [name() = $start-name]
+                        [contains(., concat(' mid=&quot;', $start-mid, '&quot;'))])
+                    else
+                        (
+                        (:Simple, insertions cannot nest in each other:)
+                        if (not($isComment)) then
+                            (preceding::processing-instruction()
+                            [name() = $start-name]
+                            [not(contains(., ' mid=&quot;'))])
+                        else
+                            (
+                            (:We need to look on the stack of PIs:)
+                            oxy:getStartCommentPI(.)))"/>
+
             <xsl:variable name="start-pi" select="$preceding[last()]"/>
             <xsl:variable name="id" select="generate-id($start-pi)"/>
             <xsl:variable name="comment-nr" select="$cmid2nr//mapping[@id = $id]/@nr"/>
@@ -305,6 +312,34 @@ Copyright (c) 1998-2019 Syncro Soft SRL, Romania.  All rights reserved.
         </xsl:if>
     </xsl:template>
     
+    <!-- Receives an end comment PI (without an @mid attribute) and returns a start comment PI (or nothing) -->
+    <xsl:function name="oxy:getStartCommentPI" as="processing-instruction()?">
+        <xsl:param name="endPI"/>
+        <xsl:variable name="end-name" select="$endPI/name()"/>
+        <xsl:variable name="start-name"
+            select="concat(substring-before($endPI/name(), '_end'), '_start')"/>
+        <!-- All preceding PIs without a @mid -->
+        
+        <xsl:variable name="allPrecedingPIs" select="$endPI/preceding::processing-instruction()
+            [name() = $start-name or name() = $end-name]
+            [not(contains(., ' mid=&quot;'))]"/>
+        
+        <xsl:variable name="precedingStartPIs" select="
+            $allPrecedingPIs[name() = $start-name][
+            every $startPi in . satisfies
+            oxy:doTheyMatch($startPi, $endPI, $allPrecedingPIs[. >> $startPi])
+            ]
+            "/>
+        <xsl:sequence select="$precedingStartPIs[last()]"/>
+    </xsl:function>
+    
+    <!-- Check if there are an equal number of starts and ends in the sequence -->
+    <xsl:function name="oxy:doTheyMatch" as="xs:boolean">
+        <xsl:param name="piStart" as="processing-instruction()"/>
+        <xsl:param name="piEnd" as="processing-instruction()"/>
+        <xsl:param name="piBetween" as="processing-instruction()*"/>
+        <xsl:sequence select="count($piBetween[name() = name($piStart)]) = count($piBetween[name() = name($piEnd)])"/>
+    </xsl:function>
     
     <!-- 
         The highlight in the editor do not generate anything. 
