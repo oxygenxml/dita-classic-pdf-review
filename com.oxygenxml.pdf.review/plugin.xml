@@ -17,6 +17,10 @@
       <val desc="No" default="true">no</val>
       <val desc="Yes">yes</val>
     </param>
+    <param name="show.changebars" desc="Show change bars based on Oxygen changes" type="enum">
+      <val desc="No" default="true">no</val>
+      <val desc="Yes">yes</val>
+    </param>
     <param name="ct.insert.color" desc="Insertion color for Oxygen tracked changes, specified as a plain color (i.e. red, yellow, blue), or with a hexadecimal equivalent (i.e. #FFFFFF).
       The default value is 'blue'." type="string"/>
     <param name="ct.delete.color" desc="Deletion color for Oxygen tracked changes, specified as a plain color (i.e. red, yellow, blue), or with a hexadecimal equivalent (i.e. #FFFFFF).
