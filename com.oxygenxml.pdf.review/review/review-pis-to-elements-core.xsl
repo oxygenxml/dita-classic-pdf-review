@@ -2,7 +2,7 @@
 <!--
     
 Oxygen WebHelp Plugin
-Copyright (c) 1998-2019 Syncro Soft SRL, Romania.  All rights reserved.
+Copyright (c) 1998-2020 Syncro Soft SRL, Romania.  All rights reserved.
 
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
@@ -292,14 +292,14 @@ Copyright (c) 1998-2019 Syncro Soft SRL, Romania.  All rights reserved.
                     if (string-length($start-mid) > 0) then
                         (preceding::processing-instruction()
                         [name() = $start-name]
-                        [contains(., concat(' mid=&quot;', $start-mid, '&quot;'))])
+                        [contains(., concat('mid=&quot;', $start-mid, '&quot;'))])
                     else
                         (
                         (:Simple, insertions cannot nest in each other:)
                         if (not($isComment)) then
                             (preceding::processing-instruction()
                             [name() = $start-name]
-                            [not(contains(., ' mid=&quot;'))])
+                            [not(contains(., 'mid=&quot;'))])
                         else
                             (
                             (:We need to look on the stack of PIs:)
@@ -322,7 +322,7 @@ Copyright (c) 1998-2019 Syncro Soft SRL, Romania.  All rights reserved.
         
         <xsl:variable name="allPrecedingPIs" select="$endPI/preceding::processing-instruction()
             [name() = $start-name or name() = $end-name]
-            [not(contains(., ' mid=&quot;'))]"/>
+            [not(contains(., 'mid=&quot;'))]"/>
         
         <xsl:variable name="precedingStartPIs" select="
             $allPrecedingPIs[name() = $start-name][
