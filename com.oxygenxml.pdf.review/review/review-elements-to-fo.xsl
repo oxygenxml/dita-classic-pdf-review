@@ -8,11 +8,23 @@
     xmlns:oxy="http://www.oxygenxml.com/extensions/author">
     <xsl:include href="review-utils.xsl"/>
     <xsl:param name="show.changes.and.comments" select="'no'"/>
+    <xsl:param name="show.changebars" select="'no'"/>
     <xsl:param name="insert.color" select="'blue'"/>
     <xsl:param name="delete.color" select="'red'"/>
     <xsl:param name="comment.bg.color" select="'yellow'"/>
     
-<!-- defining the formatting of modifications  -->
+    <!-- defining the formatting of modifications  -->
+    <xsl:attribute-set name="changebar">
+        <xsl:attribute name="change-bar-class" select="generate-id()"/>
+        <xsl:attribute name="change-bar-style" select="'solid'"/>
+        <xsl:attribute name="change-bar-width" select="'1px'"/>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="changebar.insert" use-attribute-sets="changebar">
+        <xsl:attribute name="change-bar-color" select="$insert.color"/>
+    </xsl:attribute-set>
+    <xsl:attribute-set name="changebar.delete" use-attribute-sets="changebar">
+        <xsl:attribute name="change-bar-color" select="$delete.color"/>
+    </xsl:attribute-set>
     <xsl:attribute-set name="insert">
         <xsl:attribute name="color" select="$insert.color"/>
     </xsl:attribute-set>
@@ -58,16 +70,28 @@
     <!-- INSERT CHANGE, USE UNDERLINE -->
     <xsl:template match="oxy:oxy-insert-hl[
         not(parent::*[local-name() = 'table' or local-name() = 'table-body' or local-name() = 'table-row' or local-name() = 'list-block' or local-name() = 'flow'])]">
+        <xsl:if test="$show.changebars = 'yes'">
+            <fo:change-bar-begin xsl:use-attribute-sets="changebar.insert"/>
+        </xsl:if>
         <fo:inline xsl:use-attribute-sets="insert">
             <xsl:apply-templates/>
         </fo:inline>
+        <xsl:if test="$show.changebars = 'yes'">
+            <fo:change-bar-end change-bar-class="{generate-id()}"/>
+        </xsl:if>
     </xsl:template>
     
     <!-- DELETE CHANGE, USE STRIKEOUT -->
     <xsl:template match="oxy:oxy-delete-hl">
+        <xsl:if test="$show.changebars = 'yes'">
+            <fo:change-bar-begin xsl:use-attribute-sets="changebar.delete"/>
+        </xsl:if>
         <fo:inline xsl:use-attribute-sets="delete">
             <xsl:apply-templates/>
-        </fo:inline>    
+        </fo:inline>
+        <xsl:if test="$show.changebars = 'yes'">
+            <fo:change-bar-end change-bar-class="{generate-id()}"/>
+        </xsl:if>
     </xsl:template>
     
     <!-- EXM-38048 Somehow wrap in list items oxy elements which are directly in it. -->
