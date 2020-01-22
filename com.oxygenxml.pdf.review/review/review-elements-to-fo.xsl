@@ -285,7 +285,7 @@
     
     <xsl:function name="oxy:getFoElemIndex" as="xs:integer">
         <xsl:param name="currentElem"/>
-        <xsl:value-of select="$currentElem/count(preceding-sibling::fo:*)"/>
+        <xsl:sequence select="$currentElem/count(preceding-sibling::fo:*)"/>
     </xsl:function>
 
     <xsl:template match="*:table-cell">
