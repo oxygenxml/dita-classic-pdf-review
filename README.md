@@ -3,7 +3,7 @@ Plugin which allows showing Oxygen track changes and comments, and change bars, 
 The plugin is compatible and was tested with DITA-OT 3.x.
 The change bars displaying is compatible and was tested with following PDF publishing engine :
 * Antenna House 
-* FOP 2.4 and later
+* FOP 2.4
 
 This plugin does not contribute a new transformation type.
 
