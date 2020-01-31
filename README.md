@@ -1,9 +1,7 @@
 # Plugin Showing Oxygen Change Tracking information in the PDF output
 Plugin which allows showing Oxygen track changes and comments, and change bars, in the classic PDF output obtained using the DITA-OT.
 The plugin is compatible and was tested with DITA-OT 3.x.
-The change bars displaying is compatible and was tested with following PDF publishing engine :
-* Antenna House 
-* FOP 2.4
+The change bars displaying is known to work with Antenna House Formatter V6 and Apache FOP 2.4.
 
 This plugin does not contribute a new transformation type.
 
@@ -16,6 +14,6 @@ You just need to install it and then run the regular PDF (Idiom) publishing usin
 
 Copyright and License
 ---------------------
-Copyright 2018 Syncro Soft SRL.
+Copyright 2018-2020 Syncro Soft SRL.
 
 This project is licensed under [Apache License 2.0](https://github.com/oxygenxml/dita-classic-pdf-review/blob/master/LICENSE)
